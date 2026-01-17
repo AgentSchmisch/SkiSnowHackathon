@@ -1,0 +1,18 @@
+version: '3.8'
+
+# /infra/docker-compose.yml
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../app:/app/app
+      - ski_data:/app/app/instance
+    environment:
+      - FLASK_ENV=development
+
+volumes:
+  ski_data:
