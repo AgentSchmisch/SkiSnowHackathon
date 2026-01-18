@@ -12,4 +12,5 @@ COPY ../app ./app
 
 # Expose port and run from the app package
 EXPOSE 8000
-CMD ["python", "app/main.py"]
+ENV PYTHONPATH=/app
+CMD ["python", "-m", "app.main"]

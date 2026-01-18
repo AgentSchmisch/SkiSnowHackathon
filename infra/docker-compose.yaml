@@ -1,18 +1,49 @@
 version: '3.8'
 
-# /infra/docker-compose.yml
 services:
+  # --- DATABASE SERVICE ---
+  db:
+    image: postgres:15-alpine
+    container_name: ski_db
+    restart: always
+    environment:
+      POSTGRES_USER: ski_user
+      POSTGRES_PASSWORD: ski_password
+      POSTGRES_DB: skidb
+    volumes:
+      # Persists your game data even if the container is deleted
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ski_user -d skidb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # --- FLASK API SERVICE ---
   api:
     build:
       context: ..
       dockerfile: infra/Dockerfile
+    container_name: ski_api
+    restart: always
+    # Ensures the DB is ready before the API tries to connect
+    depends_on:
+      db:
+        condition: service_healthy
     ports:
       - "8000:8000"
-    volumes:
-      - ../app:/app/app
-      - ski_data:/app/app/instance
     environment:
+      - DATABASE_URL=postgresql://ski_user:ski_password@db:5432/skidb
       - FLASK_ENV=development
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+    volumes:
+      # Bind mount the app folder for live-reloading during development
+      - ../app:/app/app
+      # Map the requirements file so it's visible if needed
+      - ../requirements.txt:/app/requirements.txt
 
 volumes:
-  ski_data:
+  postgres_data:
